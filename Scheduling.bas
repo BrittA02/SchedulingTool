@@ -26,7 +26,7 @@ Private Sub LoadParameters()
 
     'Open up the assessor list file
     Set oXL = CreateObject("Excel.Application")
-    Set oWB = oXL.Workbooks.Open("PATH_TO\Assessor List.xls")
+    Set oWB = oXL.Workbooks.Open("$PATH_TO$\Assessor List.xls")
     Set oWSAssess = oWB.Worksheets("Assessors")
     Set oWSLookup = oWB.Worksheets("Lookup")
 

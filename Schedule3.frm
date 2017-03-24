@@ -1,5 +1,5 @@
 VERSION 5.00
-Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} Schedule3 
+Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} Schedule3
    Caption         =   "Schedule Appointment v1001"
    ClientHeight    =   6735
    ClientLeft      =   45
@@ -19,12 +19,14 @@ Dim Slot1 As Slot
 Dim Slot2 As Slot
 
 Private Sub btnReplace1_Click()
+    If Slot1 Is Nothing Then Exit Sub
     Slot1.Reject
     SortSlots
     ShowSlots
 End Sub
 
 Private Sub btnReplace2_Click()
+    If Slot2 Is Nothing Then Exit Sub
     Slot2.Reject
     SortSlots
     ShowSlots
@@ -47,7 +49,7 @@ End Sub
 Private Sub btnUse2_Click()
     If Slot2 Is Nothing Then Exit Sub
     If Slot2.Score > 1000 Then Exit Sub
-    
+
     If MsgBox("Are you sure you wish to use this slot?", vbYesNo) = vbNo Then Exit Sub
     UseSlot Slot2
 End Sub
@@ -87,7 +89,7 @@ Private Sub ShowSlots()
             lTime1.Caption = Format(Slot1.SlotDate, "hh:mm AMPM")
         End If
     End If
-    
+
     If Slot2 Is Nothing Then
         lAssessor2.Caption = "Not available"
         lType2.Caption = ""

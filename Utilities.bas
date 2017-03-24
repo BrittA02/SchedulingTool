@@ -1,4 +1,9 @@
 Attribute VB_Name = "Utilities"
+
+'Author: spcurtis81 - http://stackoverflow.com/users/3406044/spcurtis81
+'Source: http://stackoverflow.com/questions/22325958/declaring-calling-the-sleep-api
+Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
+
 Public Function SortCollection(ByVal c As Collection) As Collection
    Dim n As Long: n = c.Count
    If n = 0 Then Set SortCollection = New Collection: Exit Function
