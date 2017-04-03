@@ -17,22 +17,22 @@ Private Sub LoadParameters()
     Dim oWB As Object 'Excel.Workbook
     Dim oWSAssess As Object 'Excel.Worksheet
     Dim oWSLookup As Object 'Excel.Worksheet
-
+    
     'Start from scratch
     ClearCollections
-
+    
     'Set up namespace for contacts
     Set oNS = Application.GetNamespace("MAPI")
-
+    
     'Open up the assessor list file
     Set oXL = CreateObject("Excel.Application")
-    Set oWB = oXL.Workbooks.Open("$PATH_TO$\Assessor List.xls")
+    Set oWB = oXL.Workbooks.Open("K:\FSC ACT\West Kent\Scheduling Trackers\Scheduling Tool\Assessor List - OT.xls")
     Set oWSAssess = oWB.Worksheets("Assessors")
     Set oWSLookup = oWB.Worksheets("Lookup")
-
+    
     PopulateAssessors oWSAssess, oNS
     PopulateLocations oWSLookup
-
+    
     'Shut everything down
     oWB.Close savechanges:=False
     oXL.Quit
@@ -48,9 +48,9 @@ Private Sub PopulateAssessors(oWSAssess As Object, oNS As NameSpace)
     Dim AssessLoc As String
     Dim oNewAs As Assessor
     Dim n As Integer
-
+    
     'On Error Resume Next
-
+    
     'Loop through the excel file listing the staff and their roles
     For n = 1 To oWSAssess.Range("AssessorCount")
         'Pull parameters
@@ -58,7 +58,7 @@ Private Sub PopulateAssessors(oWSAssess As Object, oNS As NameSpace)
         AssessQual = oWSAssess.Range("FirstEntry").offset(n - 1, 1)
         AssessOT = oWSAssess.Range("FirstEntry").offset(n - 1, 2)
         AssessLoc = oWSAssess.Range("FirstEntry").offset(n - 1, 3)
-
+        
         'Create assessor
         Set oNewAs = New Assessor
         If oNewAs.SetAssessor(AssessName, AssessQual, AssessOT, AssessLoc, oNS) Then
@@ -71,7 +71,7 @@ End Sub
 Private Sub PopulateLocations(oWSLookup As Object)
     Dim oLocation As Location
     Dim n As Integer
-
+    
     'Populate the locations collection
     PostcodeCount = oWSLookup.Range("PostcodeCount")
     For n = 1 To PostcodeCount
@@ -93,7 +93,7 @@ End Sub
 
 Private Sub ClearCollections()
     Dim oLoopAss As Assessor
-
+    
     'Bin all open folders and other stuff
     For Each oLoopAss In oAs
         oLoopAss.CloseAll
@@ -105,7 +105,7 @@ Private Sub ClearCollections()
             oAs.Remove 1
         Next n
     End If
-
+    
     'Clear the Locations collection
     If Locations.Count > 0 Then
         For n = 1 To Locations.Count
@@ -117,7 +117,7 @@ End Sub
 Public Sub SetSchedule1GPs()
     Dim n As Integer
     Dim oLoc As Location
-
+    
     For n = 1 To GPCount
         Set oLoc = Locations.Item(n + PostcodeCount)
         Schedule1.cbGP.AddItem oLoc.Name
@@ -126,19 +126,19 @@ End Sub
 
 Public Function SetFlags(FilterType As String, FilterName As String)
     On Error GoTo FlagFail
-
+    
     Dim oLoopAss As Assessor
     Dim Office As String
     Dim Qual As Boolean
     Dim OT As Boolean
     Dim LocPass As Boolean
-
+    
     Select Case FilterType
         Case "Location"
             'Get the office from the filtername
             Office = Locations.Item(FilterName).Office
             LocPass = False
-
+            
             'Loop through the assessors and set flags. Location is done first so set both true and false
             For Each oLoopAss In oAs
                 If oLoopAss.Location = Office Then
@@ -148,9 +148,9 @@ Public Function SetFlags(FilterType As String, FilterName As String)
                     oLoopAss.FilterFlag = False
                 End If
             Next oLoopAss
-
+            
             If LocPass = False Then GoTo FlagFail
-
+            
         Case "Skill"
             'Get flag settings based on filtername
             Select Case FilterName
@@ -167,7 +167,7 @@ Public Function SetFlags(FilterType As String, FilterName As String)
                 Qual = False
                 OT = True
             End Select
-
+            
             'Loop through assessors, trim off those who have the wrong specialty
             For Each oLoopAss In oAs
                 If oLoopAss.FilterFlag Then
@@ -177,7 +177,7 @@ Public Function SetFlags(FilterType As String, FilterName As String)
                 End If
             Next oLoopAss
     End Select
-
+    
     SetFlags = True
 Exit Function
 
@@ -200,19 +200,36 @@ Public Sub RetrieveCalItems()
     Dim tmpSlot As Slot
     Dim n As Long
     Dim oNS As NameSpace
-
+    
     Set oNS = Application.GetNamespace("MAPI")
-
+    
     'Empty the slots collection
     For n = 1 To Slots.Count
         Slots.Remove 1
     Next n
-
+    
+    THISCOUNT = 0
+    PROGRESS.Show False
+    
     For Each oLoopAss In oAs
+    
+        THISCOUNT = THISCOUNT + 1
+    
+        PROGRESS.ProgressBar1.Value = CInt((THISCOUNT / oAs.Count) * 100)
+        PROGRESS.Caption = "Progress... " & Strings.Format(THISCOUNT / oAs.Count, "0%")
+        DoEvents
+        
         If oLoopAss.FilterFlag Then
             If oLoopAss.RefreshCalItems(Now + 1, Now + 29, oNS) Then
-                oLoopAss.CalcUtilisation
-
+                'oLoopAss.CalcUtilisation
+                
+                
+                If oLoopAss.CalItems.Count > 0 Then
+                    oLoopAss.Utilisation = 1 / oLoopAss.CalItems.Count
+                Else
+                    oLoopAss.Utilisation = 0
+                End If
+                
                 'Fill the slots from their calitems
                 For Each oAptmt In oLoopAss.CalItems
                     Set tmpSlot = New Slot
@@ -222,7 +239,9 @@ Public Sub RetrieveCalItems()
             End If
         End If
     Next oLoopAss
-
+    
+    PROGRESS.Hide
+    
     SortSlots
 End Sub
 
@@ -233,11 +252,11 @@ End Sub
 
 Public Sub RecalcSlotScores()
     Dim oSlot As Slot
-
+    
     For Each oSlot In Slots
         oSlot.CalcScore
     Next oSlot
-
+    
     SortSlots
 End Sub
 
@@ -245,24 +264,24 @@ Public Function UseSlot(ChosenSlot As Slot) As Boolean
     '
     ' Allocates the case to this slot
     '
-
+    
     'The slot itself
     Dim SubjectLine As String
-
+    
     SubjectLine = InputBox("Please paste the name and swift ID from AIS.", "Slot Subject Line Required")
-
+    
     If SubjectLine = "" Then
         MsgBox "Action cancelled - slot not booked"
         UseSlot = False
         Exit Function
     End If
-
+    
     ChosenSlot.oSlot.Subject = SubjectLine
     ChosenSlot.oSlot.Categories = "Slot: Initial Assessment"
-
+    
     MsgBox "The selected slot will now open. Please make sure you set the label to red."
     ChosenSlot.oSlot.Display
-
+    
     Dim oMail As MailItem
     'An autoemail for me
     Set oMail = Application.CreateItem(olMailItem)
@@ -271,7 +290,7 @@ Public Function UseSlot(ChosenSlot As Slot) As Boolean
     oMail.Body = "Slot allocated by user " & Environ("Username") & "." & vbCrLf & vbCrLf & "1. Please check your calendar to confirm the appointment is red."
     oMail.Body = oMail.Body & vbCrLf & "2. The BICA will follow shortly in a separate email from the CAO."
     oMail.Send
-
+    
     'An autoemail for the assessor
     Set oMail = Application.CreateItem(olMailItem)
     oMail.To = ChosenSlot.AssessorName
@@ -281,6 +300,6 @@ Public Function UseSlot(ChosenSlot As Slot) As Boolean
     oMail.Body = oMail.Body & vbCrLf & "2. The BICA will follow shortly in a separate email from the CAO."
     oMail.Recipients.ResolveAll
     oMail.Display
-
-    Schedule3.hide
+    
+    Schedule3.Hide
 End Function
