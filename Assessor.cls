@@ -15,19 +15,18 @@ Public EmailName As String
 Public FilterFlag As Boolean 'True means it is a suitable assessor
 Private Calendar As MAPIFolder
 Public CalItems As New Collection
-Private Utilisation As Single
+Public Utilisation As Single
 Private CalStoreID As Variant
-
 
 Public Function SetAssessor(ByVal Name As String, ByVal Qual As Boolean, ByVal OccTherapist As Boolean, ByVal Loc As String, ByRef oNS As NameSpace)
     Set AssessorRecipient = oNS.CreateRecipient(Name)
     AssessorRecipient.Resolve
-
+    
     Qualified = Qual
     OT = OccTherapist
     Location = Loc
     FilterFlag = True
-
+    
     If AssessorRecipient.Resolved Then
         EmailName = Name
         SetAssessor = True
@@ -44,28 +43,26 @@ Public Function RefreshCalItems(LowDate As Date, HighDate As Date, ByRef oNS As 
     Dim oNew As AppointmentItem
     Dim sCats As String
     Dim n As Long
-
+    
     strQry = "[AllDayEvent] = False " & _
                 "AND [Start] > '" & Format(LowDate, "ddddd h:nn AMPM") & "' " & _
                 "AND [End] <= '" & Format(HighDate, "ddddd h:nn AMPM") & "' " & _
                 "AND [Label] <> 3"
-
+    
     On Error GoTo OpFailed
-
+    
     Set Calendar = oNS.GetSharedDefaultFolder(AssessorRecipient, olFolderCalendar)
-
     DoEvents
-    Sleep 500
-
+    Sleep 200
     Set oSubItems = Calendar.Items.Restrict(strQry)
-
+    
     'Empty the calitems collection
     If Not CalItems Is Nothing Then
         For n = 1 To CalItems.Count
             CalItems.Remove 1
         Next n
     End If
-
+    
     '
     'Repopulate with the right categories
     '
@@ -82,7 +79,7 @@ Public Function RefreshCalItems(LowDate As Date, HighDate As Date, ByRef oNS As 
             End If
         End If
     Next oItem
-
+    
     '
     'Add in the green labels
     '
@@ -92,14 +89,14 @@ Public Function RefreshCalItems(LowDate As Date, HighDate As Date, ByRef oNS As 
                 "AND [Label] = 3"
 
     Set oSubItems = Calendar.Items.Restrict(strQry)
-
+    
     For Each oItem In oSubItems
         CalItems.Add oItem
     Next oItem
-
+    
     RefreshCalItems = True
 Exit Function
-
+    
 OpFailed:
     MsgBox "The user " & AssessorRecipient.Name & " does not have correct permissions on their calendar - please inform them. You may be able to check their slots manually."
     RefreshCalItems = False
@@ -112,25 +109,25 @@ Public Sub CalcUtilisation()
     Dim strQry As String
     Dim SlotCount As Long
     Dim sCats As String
-
+    
     strQry = "[AllDayEvent] = False " & _
                 "AND [Start] > '" & Format(Now + 1, "ddddd h:nn AMPM") & "' " & _
                 "AND [End] <= '" & Format(Now + 29, "ddddd h:nn AMPM") & "' " & _
                 "AND ([Label] = 3 or [Label] = 1 or [Label] = 5)"
     Set CalSlots = Calendar.Items.Restrict(strQry)
-
+    
     SlotCount = 0
     For Each oItem In CalSlots
         SlotCount = SlotCount + 1
     Next oItem
-
+    
     'Now do all the categories
     strQry = "[AllDayEvent] = False " & _
                 "AND [Start] > '" & Format(Now + 1, "ddddd h:nn AMPM") & "' " & _
                 "AND [End] <= '" & Format(Now + 29, "ddddd h:nn AMPM") & "' " & _
                 "AND NOT ([Label] = 3 OR [Label] = 1 OR [Label] = 5)"
     Set CalSlots = Calendar.Items.Restrict(strQry)
-
+    
     For Each oItem In CalSlots
         sCats = oItem.Categories
         If sCats <> "" Then
@@ -147,7 +144,7 @@ Public Sub CalcUtilisation()
             End If
         End If
     Next oItem
-
+    
     'Set utilisation to be one minus green over all
     If SlotCount = 0 Then
         Utilisation = 0
@@ -159,10 +156,10 @@ End Sub
 Public Sub CloseAll()
     'Close all folders etc...
     Dim oLoopItem As AppointmentItem
-
+    
     Set AssessorRecipient = Nothing
     Set Calendar = Nothing
-
+    
     For Each oLoopItem In CalItems
         Set oLoopItem = Nothing
     Next oLoopItem

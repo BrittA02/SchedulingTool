@@ -1,5 +1,5 @@
 VERSION 5.00
-Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} Schedule3
+Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} Schedule3 
    Caption         =   "Schedule Appointment v1001"
    ClientHeight    =   6735
    ClientLeft      =   45
@@ -7,7 +7,7 @@ Begin {C62A69F0-16DC-11CE-9E98-00AA00574A4F} Schedule3
    ClientWidth     =   13515
    OleObjectBlob   =   "Schedule3.frx":0000
    ShowModal       =   0   'False
-   StartUpPosition =   1  'CenterOwner
+   StartUpPosition =   2  'CenterScreen
 End
 Attribute VB_Name = "Schedule3"
 Attribute VB_GlobalNameSpace = False
@@ -49,14 +49,14 @@ End Sub
 Private Sub btnUse2_Click()
     If Slot2 Is Nothing Then Exit Sub
     If Slot2.Score > 1000 Then Exit Sub
-
+    
     If MsgBox("Are you sure you wish to use this slot?", vbYesNo) = vbNo Then Exit Sub
     UseSlot Slot2
 End Sub
 
-Private Sub UserForm_Activate()
-    ResetForm
-End Sub
+'Private Sub UserForm_Activate()
+'    ResetForm
+'End Sub
 
 Public Sub ResetForm()
     'Fetch and calculate all the data we need
@@ -89,7 +89,7 @@ Private Sub ShowSlots()
             lTime1.Caption = Format(Slot1.SlotDate, "hh:mm AMPM")
         End If
     End If
-
+    
     If Slot2 Is Nothing Then
         lAssessor2.Caption = "Not available"
         lType2.Caption = ""
@@ -116,4 +116,8 @@ End Sub
 Private Sub RetrieveBestSlots()
     Set Slot1 = GetSlot(1)
     Set Slot2 = GetSlot(2)
+End Sub
+
+Private Sub UserForm_Initialize()
+    ResetForm
 End Sub
